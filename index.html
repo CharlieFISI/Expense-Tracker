@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seguimiento de Gastos</title>
+    <link rel="stylesheet" href="scss/main.css" />
+  </head>
+  <body>
+    <div class="expense-tracker">
+      <h1 class="expense-tracker__title">Seguimiento de Gastos</h1>
+
+      <form class="expense-form" id="expenseForm">
+        <input type="hidden" id="expenseId" />
+        <input
+          type="number"
+          class="expense-form__input"
+          id="amount"
+          placeholder="Monto"
+          aria-label="amount-input"
+          required
+        />
+        <input
+          type="text"
+          class="expense-form__input"
+          id="description"
+          placeholder="Descripción"
+          aria-label="description-input"
+          required
+        />
+        <input
+          type="date"
+          class="expense-form__input"
+          id="date"
+          aria-label="date-input"
+          required
+        />
+        <select class="expense-form__input" id="category" required>
+          <option value="">Selecciona una categoría</option>
+          <option value="Comida">Comida</option>
+          <option value="Transporte">Transporte</option>
+          <option value="Servicios">Servicios</option>
+          <option value="Entretenimiento">Entretenimiento</option>
+          <option value="Otros">Otros</option>
+        </select>
+        <button type="submit" class="expense-form__submit" id="submitBtn">
+          Agregar Gasto
+        </button>
+      </form>
+
+      <div class="expense-list">
+        <h2 class="expense-list__title">Lista de Gastos</h2>
+        <ul class="expense-list__items" id="expenseList"></ul>
+      </div>
+
+      <div class="expense-summary">
+        <h2 class="expense-summary__title">Resumen de Gastos</h2>
+        <p class="expense-summary__total">
+          Total: <span id="totalExpenses"></span>
+        </p>
+      </div>
+    </div>
+    <script type="module" src="scripts/main.js"></script>
+  </body>
+</html>
