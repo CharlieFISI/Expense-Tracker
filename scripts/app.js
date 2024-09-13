@@ -79,16 +79,12 @@ export function initApp() {
   }
 
   function formatInputAmount(value) {
-    // Remove any non-digit characters except the last dot
     value = value.replace(/[^\d.]/g, "").replace(/\.(?=.*\.)/g, "");
 
-    // Split the input into integer and decimal parts
     let [integerPart, decimalPart] = value.split(".");
 
-    // Add thousands separators to the integer part
     integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-    // If there's a decimal part, limit it to 2 digits
     if (decimalPart !== undefined) {
       decimalPart = decimalPart.slice(0, 2);
       return `${integerPart}.${decimalPart}`;
