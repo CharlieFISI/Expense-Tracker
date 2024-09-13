@@ -1,39 +1,122 @@
+import { addExpense, editExpense, deleteExpense } from "./state/actions.js";
 import Expense from "./classes/Expense.js";
-import store from "./redux/store.js";
+import { updateCategoryChart, updateTimelineChart } from "./utils/charts.js";
+import { getState, subscribe } from "./state/store.js";
 
 export function initApp() {
   const form = document.getElementById("expenseForm");
   const expenseList = document.getElementById("expenseList");
   const totalExpenses = document.getElementById("totalExpenses");
   const submitBtn = document.getElementById("submitBtn");
+  const amountInput = document.getElementById("amount");
 
   let editingExpenseId = null;
 
   function updateUI() {
+    updateExpenseList();
+    updateTotalExpenses();
+    updateCharts();
+  }
+
+  function updateExpenseList() {
     expenseList.innerHTML = "";
-    const state = store.getState();
+    const state = getState();
     state.expenses.forEach((expense) => {
       const li = document.createElement("li");
       li.className = "expense-list__item";
       li.innerHTML = `
-                ${expense.description} - $${expense.amount} (${expense.category}) - ${expense.date}
-                <button class="expense-list__edit-btn" data-id="${expense.id}">Editar</button>
-                <button class="expense-list__delete-btn" data-id="${expense.id}">Eliminar</button>
+                <div>
+                    <span class="expense-list__description">${
+                      expense.description
+                    }</span>
+                    <span class="expense-list__category">${
+                      expense.category
+                    }</span>
+                    <span class="expense-list__date">${expense.date}</span>
+                </div>
+                <span class="expense-list__amount">${formatAmount(
+                  expense.amount
+                )}</span>
+                <div class="expense-list__actions">
+                    <button class="expense-list__edit-btn" data-id="${
+                      expense.id
+                    }">Editar</button>
+                    <button class="expense-list__delete-btn" data-id="${
+                      expense.id
+                    }">Eliminar</button>
+                </div>
             `;
       expenseList.appendChild(li);
     });
-    totalExpenses.textContent = `$${getTotalExpenses().toFixed(2)}`;
+  }
+
+  function updateTotalExpenses() {
+    const total = getTotalExpenses();
+    totalExpenses.textContent = formatAmount(total);
   }
 
   function getTotalExpenses() {
-    return store
-      .getState()
-      .expenses.reduce((total, expense) => total + expense.amount, 0);
+    return getState().expenses.reduce(
+      (total, expense) => total + expense.amount,
+      0
+    );
   }
 
-  form.addEventListener("submit", (e) => {
+  function updateCharts() {
+    updateCategoryChart();
+    updateTimelineChart();
+  }
+
+  function formatAmount(amount) {
+    return `S/ ${amount.toLocaleString("es-PE", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
+  function parseAmount(amountString) {
+    return parseFloat(amountString.replace(/[^\d.]/g, ""));
+  }
+
+  function formatInputAmount(value) {
+    // Remove any non-digit characters except the last dot
+    value = value.replace(/[^\d.]/g, "").replace(/\.(?=.*\.)/g, "");
+
+    // Split the input into integer and decimal parts
+    let [integerPart, decimalPart] = value.split(".");
+
+    // Add thousands separators to the integer part
+    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+    // If there's a decimal part, limit it to 2 digits
+    if (decimalPart !== undefined) {
+      decimalPart = decimalPart.slice(0, 2);
+      return `${integerPart}.${decimalPart}`;
+    } else if (value.endsWith(".")) {
+      return `${integerPart}.`;
+    } else {
+      return integerPart;
+    }
+  }
+
+  amountInput.addEventListener("input", function (e) {
+    const cursorPosition = e.target.selectionStart;
+    const originalValue = e.target.value;
+    const formattedValue = formatInputAmount(originalValue);
+
+    if (formattedValue !== originalValue) {
+      e.target.value = formattedValue;
+      const cursorOffset = formattedValue.length - originalValue.length;
+      e.target.setSelectionRange(
+        cursorPosition + cursorOffset,
+        cursorPosition + cursorOffset
+      );
+    }
+  });
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const amount = parseFloat(document.getElementById("amount").value);
+    const amount = parseAmount(amountInput.value);
     const description = document.getElementById("description").value;
     const date = document.getElementById("date").value;
     const category = document.getElementById("category").value;
@@ -46,7 +129,7 @@ export function initApp() {
         date,
         category
       );
-      store.dispatch({ type: "EDIT_EXPENSE", payload: editedExpense });
+      await editExpense(editedExpense);
       editingExpenseId = null;
       submitBtn.textContent = "Agregar Gasto";
     } else {
@@ -57,22 +140,22 @@ export function initApp() {
         date,
         category
       );
-      store.dispatch({ type: "ADD_EXPENSE", payload: newExpense });
+      await addExpense(newExpense);
     }
 
     updateUI();
     form.reset();
   });
 
-  expenseList.addEventListener("click", (e) => {
+  expenseList.addEventListener("click", async (e) => {
     if (e.target.classList.contains("expense-list__edit-btn")) {
       const expenseId = parseInt(e.target.getAttribute("data-id"));
-      const expenseToEdit = store
-        .getState()
-        .expenses.find((expense) => expense.id === expenseId);
+      const expenseToEdit = getState().expenses.find(
+        (expense) => expense.id === expenseId
+      );
       if (expenseToEdit) {
         document.getElementById("expenseId").value = expenseToEdit.id;
-        document.getElementById("amount").value = expenseToEdit.amount;
+        amountInput.value = formatInputAmount(expenseToEdit.amount.toString());
         document.getElementById("description").value =
           expenseToEdit.description;
         document.getElementById("date").value = expenseToEdit.date;
@@ -82,11 +165,11 @@ export function initApp() {
       }
     } else if (e.target.classList.contains("expense-list__delete-btn")) {
       const expenseId = parseInt(e.target.getAttribute("data-id"));
-      store.dispatch({ type: "DELETE_EXPENSE", payload: expenseId });
+      await deleteExpense(expenseId);
       updateUI();
     }
   });
 
-  store.subscribe(updateUI);
+  subscribe(updateUI);
   updateUI();
 }

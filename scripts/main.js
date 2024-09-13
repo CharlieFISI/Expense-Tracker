@@ -1,12 +1,11 @@
-import Expense from "./classes/Expense.js";
-import Category from "./classes/Category.js";
-import expenseReducer from "./redux/reducer.js";
-import store from "./redux/store.js";
-import Tracker from "./utils/Tracker.js";
 import { initApp } from "./app.js";
+import { initDB } from "./utils/db.js";
+import { loadExpenses } from "./state/actions.js";
 
-const tracker = new Tracker();
+async function init() {
+  await initDB();
+  await loadExpenses();
+  initApp();
+}
 
-document.addEventListener("DOMContentLoaded", initApp);
-
-export { Expense, Category, expenseReducer, store, Tracker };
+init();
